@@ -8,6 +8,11 @@
 #  - Public release 1.0
 #  - Copyright Greggory M Rice 2014
 
+#  - Update: Sep 30, 2020: Addressed issues with SHAPE reactivity not displaying on Shannon entropy plot.
+#			Altered the Shannon Entropy plot to display Shannon and SHAPE on separate y axes.
+#			Fixed np.nan issue with SHAPE plotting.
+#			-999 values no longer counted as low SHAPE when determining low SHAPE/low Shannon regions
+#			Fixed issue with beginning of sequence being incorrectly included in low SHAPE/low Shannon region
 ##################################################################################
 # GPL statement:
 # This file is part of Shapemapper.
@@ -153,7 +158,7 @@ def main():
     if not debug:
         partitionPairing = generateAndRunPartition(args.mapObj, args.allConstraints,args.partitionWindowSize, args.partitionStepSize, args.safeName, args.SHAPEslope, args.SHAPEintercept, args.np, args.maxPairingDist)
     
-    # write the partition funcrion file
+    # write the partition function file
     partitionFileName="{0}/merged_{1}.dp".format(resultsDir, args.safeName)
     
     if not debug:
@@ -237,7 +242,6 @@ def main():
         except:
             print "PVclient failed to load"
             args.drawPVclient = False
-        
     
     for i,j in lowSHAPEregions:
         #define file names
@@ -1129,258 +1133,287 @@ def MasterModel_findOverlapPairs(ctObjectList, baseCount):
 
 def mainShannonFunc(shapeReact, shannonEntropy, saveName, ctStruct):
     
-    def findTransitions(react,cutoff):
-        transitions = []
-        prev = 1
-        for i in range(0,len(react)):
-            curr = (react[i] > cutoff)
-            if curr != prev:
-                transitions.append((i,curr))
-                prev = curr
-        return transitions
-    
-    def cullTransitions(transitions,minLength):
-        dist = []
-        culled = []
-        skip = False
-        # dist array is n-1 in length to the transitions
-        # it is the sequence distance length
-        # transitions = [(2,T),(5,F),(10,T)]
-        # dist = [3,5]
-        for i in range(len(transitions)-1):
-            dist.append(transitions[i+1][0]-transitions[i][0])
-        for i in range(len(dist)):
-            if skip:
-                skip=False
-                continue
-            if dist[i]<minLength:
-                skip=True
-                continue
-            culled.append(transitions[i])
-        culled.append(transitions[-1])
-        return culled
-    
-    def selectCutsites(trans1, trans2, seqLength, minlength=40):
-        def genStretch(shortlist,seqLength,high=True,pstat=False):
-            # creates an array containing the potential good cut sites as a list of 1,0
-            # based on the high low values of the culled transitions
-            # high flag inverses the transition logic
-            addnums = 1-abs(shortlist[0][1])
-            #addnums = abs(shortlist[0][1])
-            if not high:
-                addnums = abs(addnums - 1)
-            addList = []
-            for i in range(1,seqLength+1):
-                if pstat:print addnums,
-                if addnums:
-                    addList.append(i)
-                if not addnums:
-                    addList.append(0)
-                for j in shortlist:
-                    if j[0] == i:
-                        addnums=abs(j[1])
-                        if not high:
-                            addnums=abs(1-j[1])
-            return addList
-        t1 = np.array(genStretch(trans1,seqLength,high=False))
-        t2 = np.array(genStretch(trans2,seqLength,high=False,pstat=False))
-        # truth logic to find union
-        combined = (t1*t2)>0
-        #return combined
-        
-        # find the transitions again, cull for the minlength, and regenerate the stretch
-        transitions = cullTransitions(findTransitions(combined,0.5),minlength)
-        #print transitions
-        culled_combined = genStretch(transitions,seqLength)
-        
-        return culled_combined
-        
-    def movingWindow(dataIn, degree):
-        """
-        windowsize is 2*degree+1
-        """
-        out = np.zeros(len(dataIn))
-        dataIn = np.array(dataIn)
-        dataIn[dataIn<-500] = np.nan
-        # window = 2*degree + 1
-        for i in range(degree, len(dataIn)-degree):
-            out[i] = np.median(dataIn[i-degree:i+degree+1])
-        
-        # pad the 5' end
-        for i in range(0,degree):
-            out[i] = float(out[degree])
-        
-        # pad the 3' end
-        for i in range(len(dataIn)-degree, len(dataIn)):
-            out[i] = float(out[len(dataIn)-degree-1])
-        
-        #for i in out: print i
-        return out
+	def findTransitions(react,cutoff):
+		transitions = []
+		prev = 1
+		for i in range(0,len(react)):
+			curr = (react[i] > cutoff)
+			#Update V1.1: Counting -999 (nan) values as high SHAPE
+			#This is to prevent -999 tracks being called as low SHAPE
+			if np.isnan(react[i]):
+				curr = True				
+			if curr != prev:
+				transitions.append((i,curr))
+				prev = curr
+		return transitions
 
-    shannonUnscaled = shannonEntropy
-    shapeUnscaled = shapeReact
-    
-    # get a moving window of the SHAPE and Shannon data
-    shape = movingWindow(shapeUnscaled, 25)
-    shannon = movingWindow(shannonUnscaled, 25)
-    
-    
-    shapeTrans = findTransitions(shape,np.median(shape)/1)
-    #shapeTrans = findTransitions(shape,0.25)
-    #shannonTrans = findTransitions(shannon,np.median(shannon)*1)
-    shannonTrans = findTransitions(shannon,np.median(shannon))
-    
-    shape_culled = cullTransitions(shapeTrans,10)
-    shannon_culled = cullTransitions(shannonTrans,10)
-    
-    
-    
-    # find the union of the two culled transitions
-    a = np.array(selectCutsites(shape_culled,shannon_culled,len(shape)))
-    b=a>0
-    
-    print "####### shannonShapeTransitions #######"
-    #print findTransitions(b,0.5)
-    regions = findTransitions(b,0.5)
-    
-    
-    # optional: print out the range to stdout
-    #for i in range(len(b)):
-    #    print i+1,b[i]*1.0
-    #print shannon_culled
-    
-    
-    #plotting functions
-    
-    #define x axis positions
-    x = np.linspace(0,len(shape),len(shape))
-    
-    #set up plots and xtick locations
-    fig = plt.gcf()
-    fig.set_size_inches(10.5,8.1)
-    fig.set_size_inches(11.9,3.5)
-    fig.set_size_inches(24,7)
-    pdf = PdfPages(saveName)
-    plt.subplots_adjust(left=0.05,right=0.98,bottom=0.05,top=0.98)
-    ax = plt.subplot(111)
-    
-    az = fig.add_axes()
-    
-    #plot labels
-    plt.xlabel('Nucleotide',fontsize=10)
-    plt.ylabel('Reactivity',fontsize=10)
-    #plt.setp(ax.get_xticklabels(),fontsize=8,color='w')
-    #plt.setp(ax.get_yticklabels(),fontsize=8,color='w')
-    plt.setp(ax.get_xticklabels(),fontsize=8)
-    plt.setp(ax.get_yticklabels(),fontsize=8)
-    
-    #set minor and major tick locations
-    majLoc   = MultipleLocator(500)
-    minorLoc = MultipleLocator(100)
-    yMajLoc  = MultipleLocator(0.1)
-    YminorLoc= MultipleLocator(0.05) 
-    ax.xaxis.set_major_locator(majLoc)
-    ax.xaxis.set_minor_locator(minorLoc)
-    ax.yaxis.set_major_locator(yMajLoc)
-    ax.yaxis.set_minor_locator(YminorLoc)
-    
-    
-    ax.spines['right'].set_color('none')
-    ax.spines['top'].set_color('none')
-    ax.spines['left'].set_color('none')
-    
-    #ax.get_xaxis().set_visible(False)
-    #ax.get_yaxis().set_visible(False)
-    
-    #plot range
-    plt.ylim(0,2)
-    plt.xlim(0,5000)
-    
-    #plot the highlighted range
-    plt.fill_between(range(len(b)),b*3.0,0,alpha=0.2,color='blue')
-    
-#    for i in range(len(b)):
-#        print i+1, float(b[i])
-    
-    #plot the shape, shannon and their medians
-    shape_med = np.median(shape)+1
-    #plt.fill_between(x,shape,shape_med, where=shape>shape_med, facecolor='red',interpolate=True)
-    #plt.fill_between(x,shape,shape_med, where=shape<shape_med, facecolor='blue',interpolate=True)
-    plt.fill_between(x,shape+1,shape_med, facecolor='black',interpolate=True)
-    
-    #plt.plot(x,np.median(shannon)*np.ones(len(x)),color='y')
-    #plt.plot(shannon,color='r')
-    plt.fill_between(x,shannon,np.zeros_like(shannon),facecolor='brown',interpolate=True)
-    
-    #save first 5k
-    pdf.savefig(dpi=300,transparent=True)
-    
-    #change x range and save next 5k
-    plt.xlim(5000,len(x))
-    pdf.savefig(dpi=300,transparent=True)
-    
-    #change to whole range to plot in the pop up window
-    plt.xlim(0,len(x))
-    pdf.close()
-    plt.savefig(saveName,dpi=300,transparent=True)
-    
-    
-    #####
-    # expand regions to cover the entire secondary structure
-    #####
-    n = 0
-    regionPair = []
-    
-    #print >> sys.stderr, regions
-    #print >> sys.stderr, len(regions)
-    
-    try:
-        if regions[0][1] == False:
-            regionPair.append([1, regions[0][0]])
-            n = 1
-        
-        for i in range(n,len(regions)-n,2):
-            #print >> sys.stderr, i,n
-            regionPair.append([regions[i][0], regions[i+1][0]])
-        
-        if regions[-1][1] == True:
-            regionPair.append([regions[-1][0], len(shape)])
-        
-    except:
-        print "No Defined Regions"
-        regionPair.append([1,len(shape)])
+	def cullTransitions(transitions,minLength):
+		dist = []
+		culled = []
+		skip = False
+		# dist array is n-1 in length to the transitions
+		# it is the sequence distance length
+		# transitions = [(2,T),(5,F),(10,T)]
+		# dist = [3,5]
+		for i in range(len(transitions)-1):
+			dist.append(transitions[i+1][0]-transitions[i][0])
+		for i in range(len(dist)):
+			if skip:
+				skip=False
+				continue
+			if dist[i]<minLength:
+				skip=True
+				continue
+			culled.append(transitions[i])
+		culled.append(transitions[-1])
+		return culled
 
-    print "Unexpanded regions:"
-    for i,j in regionPair:
-        print i,"-",j
-        
-    allPair = ctStruct.pairList()
-    
-    expandedRegion = []
-    for i,j in regionPair:
-        new_i = i
-        new_j = j
-        
-        for k,l in allPair:
-            
-            if k<i and l>i:
-                if k< new_i:
-                    new_i = k
-                if l> new_j:
-                    new_j = l
-            if k < j and l > j:
-                if k< new_i:
-                    new_i = k
-                if l> new_j:
-                    new_j = l
-                
-        expandedRegion.append((new_i,new_j))
-    
-    print "Expanded regions:"
-    for i,j in expandedRegion:
-        print i,"-",j
-    
-    return expandedRegion
+	def selectCutsites(trans1, trans2, seqLength, minlength=40):
+		def genStretch(shortlist,seqLength,high=True,pstat=False):
+			# creates an array containing the potential good cut sites as a list of 1,0
+			# based on the high low values of the culled transitions
+			# high flag inverses the transition logic
+			addnums = 1-abs(shortlist[0][1])
+			#addnums = abs(shortlist[0][1])
+			if not high:
+				addnums = abs(addnums - 1)
+			addList = []
+			#loop through all nts in the sequence
+			#V1.1 Update: loop had started at 1, this skipped the first
+			#region and resulted in mis-assigned regions
+			for i in range(0,seqLength+1):
+				if pstat:print addnums,
+				if addnums:
+					addList.append(i)
+				if not addnums:
+					addList.append(0)
+				#if the current nt matches one of the transition starts
+				#set the addnums flag to match the boolean of the transition
+				for j in shortlist:
+					if j[0] == i:
+						addnums=abs(j[1])
+						if not high:
+							addnums=abs(1-j[1])
+			return addList
+		t1 = np.array(genStretch(trans1,seqLength,high=False))
+		t2 = np.array(genStretch(trans2,seqLength,high=False,pstat=False))
+		
+		# truth logic to find union
+		combined = (t1*t2)>0
+		#return combined
+	
+		# find the transitions again, cull for the minlength, and regenerate the stretch
+		transitions = cullTransitions(findTransitions(combined,0.5),minlength)
+		culled_combined = genStretch(transitions,seqLength)
+	
+		return culled_combined
+	
+	def movingWindow(dataIn, degree):
+		"""
+		windowsize is 2*degree+1
+		"""
+		out = np.zeros(len(dataIn))
+		dataIn = np.array(dataIn)
+		dataIn[dataIn<-500] = np.nan
+		# window = 2*degree + 1
+		for i in range(degree, len(dataIn)-degree):
+			#### v1.1 update, medians now calculated with nanmedian not median
+			out[i] = np.nanmedian(dataIn[i-degree:i+degree+1])
+	
+		# pad the 5' end
+		for i in range(0,degree):
+			out[i] = float(out[degree])
+	
+		# pad the 3' end
+		for i in range(len(dataIn)-degree, len(dataIn)):
+			out[i] = float(out[len(dataIn)-degree-1])
+	
+		#for i in out: print i
+		return out
+
+	shannonUnscaled = shannonEntropy
+	shapeUnscaled = shapeReact
+
+	# get a moving window of the SHAPE and Shannon data
+	shape = movingWindow(shapeUnscaled, 25)
+	shannon = movingWindow(shannonUnscaled, 25)
+
+	shapeTrans = findTransitions(shape,np.nanmedian(shape)/1)
+	#shapeTrans = findTransitions(shape,0.25)
+	#shannonTrans = findTransitions(shannon,np.median(shannon)*1)
+	shannonTrans = findTransitions(shannon,np.median(shannon))
+	
+	shape_culled = cullTransitions(shapeTrans,10)
+	shannon_culled = cullTransitions(shannonTrans,10)
+
+	# find the union of the two culled transitions
+	a = np.array(selectCutsites(shape_culled,shannon_culled,len(shape)))
+	b=a>0
+	
+	print "####### shannonShapeTransitions #######"
+	#print findTransitions(b,0.5)
+	regions = findTransitions(b,0.5)
+
+	# optional: print out the range to stdout
+	#for i in range(len(b)):
+	#    print i+1,b[i]*1.0
+	#print shannon_culled
+
+
+	#plotting functions
+
+	#define x axis positions
+	x = np.linspace(0,len(shape),len(shape))
+
+	#set up plots and xtick locations
+	fig = plt.gcf()
+	fig.set_size_inches(10.5,8.1)
+	fig.set_size_inches(11.9,3.5)
+	fig.set_size_inches(24,7)
+	pdf = PdfPages(saveName)
+	plt.subplots_adjust(left=0.05,right=0.95,bottom=0.06,top=0.98)
+	ax = plt.subplot(111)
+
+	az = fig.add_axes()
+
+	#plot labels
+	plt.xlabel('Nucleotide',fontsize=10)
+	plt.ylabel('Shannon entropy',fontsize=10)
+	#plt.setp(ax.get_xticklabels(),fontsize=8,color='w')
+	#plt.setp(ax.get_yticklabels(),fontsize=8,color='w')
+	plt.setp(ax.get_xticklabels(),fontsize=8)
+	plt.setp(ax.get_yticklabels(),fontsize=8)
+
+	#set minor and major tick locations
+	majLoc   = MultipleLocator(500)
+	minorLoc = MultipleLocator(100)
+	yMajLoc  = MultipleLocator(0.1)
+	YminorLoc= MultipleLocator(0.05) 
+	yMajLoc2  = MultipleLocator(0.1)
+	YminorLoc2= MultipleLocator(0.05)
+	ax.xaxis.set_major_locator(majLoc)
+	ax.xaxis.set_minor_locator(minorLoc)
+	ax.yaxis.set_major_locator(yMajLoc)
+	ax.yaxis.set_minor_locator(YminorLoc)
+
+
+	ax.spines['right'].set_color('none')
+	ax.spines['top'].set_color('none')
+	ax.spines['left'].set_color('none')
+
+	#ax.get_xaxis().set_visible(False)
+	#ax.get_yaxis().set_visible(False)
+
+	#plot range
+	plt.ylim(0,2)
+	plt.xlim(0,5000)
+
+	#plot the highlighted range
+	lowShannonLowSHAPE = plt.fill_between(range(len(b)),b*3.0,0,alpha=0.2,color='blue', label = "Low Shannon low SHAPE")
+
+	#    for i in range(len(b)):
+	#        print i+1, float(b[i])
+	
+	#### V1.1 Update #####
+	#plt the shannon entropy and it's median
+	plt.plot(x,np.median(shannon)*np.ones(len(x)),color='y')
+	#plt.plot(shannon,color='r')
+	shannonPlot = plt.fill_between(x,shannon,np.zeros_like(shannon),facecolor='brown',interpolate=True, label = "Shannon")
+
+	#twin the x axis
+	ax2 = ax.twinx()
+	#plot the shape reactivity above the shannon
+	shape_med = np.nanmedian(shape)
+	#### V1.1 Update
+	#overwrite all np.nan values with median
+	#this prevent errors in the plotting
+	shapeForPlotting = shape[:]
+	for i in range(len(shapeForPlotting)):
+		if np.isnan(shapeForPlotting[i]):
+			shapeForPlotting[i] = shape_med
+	#plt.fill_between(x,shape,shape_med, where=shape>shape_med, facecolor='red',interpolate=True)
+	#plt.fill_between(x,shape,shape_med, where=shape<shape_med, facecolor='blue',interpolate=True)
+	shapePlot = ax2.fill_between(x,shapeForPlotting,shape_med, facecolor='black',interpolate=True, label = "SHAPE")
+	
+	plt.ylabel('SHAPE reactivity')
+	plt.ylim(-1,1)
+	plt.legend([lowShannonLowSHAPE,shapePlot,shannonPlot],["Low SHAPE low Shannon","SHAPE","Shannon"],loc=2)
+	ax2.yaxis.set_major_locator(yMajLoc2)
+	ax2.yaxis.set_minor_locator(YminorLoc2)
+	
+	#### End of V1.1 Update #####
+	
+	#save first 5k
+	pdf.savefig(dpi=300,transparent=True)
+
+	#change x range and save next 5k
+	plt.xlim(5000,len(x))
+	pdf.savefig(dpi=300,transparent=True)
+
+	#change to whole range to plot in the pop up window
+	plt.xlim(0,len(x))
+	pdf.close()
+	plt.savefig(saveName,dpi=300,transparent=True)
+
+
+	#####
+	# expand regions to cover the entire secondary structure
+	#####
+	n = 0
+	regionPair = []
+
+	#print >> sys.stderr, regions
+	#print >> sys.stderr, len(regions)
+
+	try:
+		if regions[0][1] == False:
+			#V1.1 Update, prevent an issue with the first nt
+			if regions[0][0] != 0:
+				regionPair.append([1, regions[0][0]])
+			n = 1
+	
+		for i in range(n,len(regions)-n,2):
+			#print >> sys.stderr, i,n
+			regionPair.append([regions[i][0], regions[i+1][0]])
+	
+		if regions[-1][1] == True:
+			regionPair.append([regions[-1][0], len(shape)])
+	
+	except:
+		print "No Defined Regions"
+		regionPair.append([1,len(shape)])
+
+	print "Unexpanded regions:"
+	for i,j in regionPair:
+		print i,"-",j
+	
+	allPair = ctStruct.pairList()
+
+	expandedRegion = []
+	for i,j in regionPair:
+		new_i = i
+		new_j = j
+	
+		for k,l in allPair:
+		
+			if k<i and l>i:
+				if k< new_i:
+					new_i = k
+				if l> new_j:
+					new_j = l
+			if k < j and l > j:
+				if k< new_i:
+					new_i = k
+				if l> new_j:
+					new_j = l
+			
+		expandedRegion.append((new_i,new_j))
+
+	print "Expanded regions:"
+	for i,j in expandedRegion:
+		print i,"-",j
+
+	return expandedRegion
     
 
 
