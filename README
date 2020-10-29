@@ -10,10 +10,13 @@ Requirements:
 python 2.7
 
 ===================================================================================
-RNAStructure (only required if doing structure prediction) -
+RNAStructure - https://rna.urmc.rochester.edu/RNAstructure.html
+Fold and partition executables necessary to predict secondary structure and base pairing probabilites
 
 Download command-line applications for your platform
 Extract to home directory
+
+build binaries using the 'make all' command in the RNAStructure directory.
 
 add following 2 lines to ~/.bash_profile
 
