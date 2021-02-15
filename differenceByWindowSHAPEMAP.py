@@ -181,8 +181,8 @@ def smoothRect(dataIn,degree=1):
 
 def fitLinear(x,y,NData):
     fittedData=np.zeros(NData)
-    fittedData[0:x[0]]=y[0]
-    fittedData[x[-1]:]=y[-1]
+    fittedData[0:int(x[0])]=y[0]
+    fittedData[int(x[-1]):]=y[-1]
     NPoint=len(x)
     
     for i in range(NPoint-1):
