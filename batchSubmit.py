@@ -59,7 +59,7 @@ def submitJob(command):
         os.remove(errname)
         return 0
     except:
-        print 'Job Failed:>% {0}'.format(' '.join(command))
+        print('Job Failed:>% {0}'.format(' '.join(command)))
         return 1
     
 def parseArgs():
@@ -154,7 +154,7 @@ def batchSubmit(jobCommands, nproc=4):
             for i in range(len(jobTrack)):
                 if jobTrack[i] == 0:
                     currJobs[i] = Process(target=submitJob,args=(a,))
-                    print 'running:>% {0}'.format(' '.join(a))
+                    print('running:>% {0}'.format(' '.join(a)))
                     currJobs[i].start()
                     #continue
                     break
@@ -173,7 +173,7 @@ if __name__ == '__main__':
     # read and parse the commands
     x = readCommandList(args.commandList)
     
-    print x
+    print(x)
     batchSubmit(x, args.n)
     sys.exit()
     
@@ -236,5 +236,5 @@ if __name__ == '__main__':
     
  
     if args.time:
-        print 'Total Runtime: {0:.4f} seconds'.format(time.time() - start)
+        print('Total Runtime: {0:.4f} seconds'.format(time.time() - start))
     

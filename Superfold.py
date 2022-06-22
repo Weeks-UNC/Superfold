@@ -61,16 +61,16 @@ class shapeMAP:
         if fIN:
             parsed = self.readFile(fIN)
             
-            self.ntNum = map(int,parsed[0])
-            self.shape = map(float,parsed[1])
-            self.stdErr= map(float,parsed[2])
+            self.ntNum = list(map(int,parsed[0]))
+            self.shape = list(map(float,parsed[1]))
+            self.stdErr= list(map(float,parsed[2]))
             self.seq = parsed[3]
             
-            if len(parsed.keys()) == 5:
+            if len(list(parsed.keys())) == 5:
                 try:
-                    self.zfactor = map(float,parsed[4])
+                    self.zfactor = list(map(float,parsed[4]))
                 except:
-                    print "formatting error: {0}\nNon float in zfactor column".format(fIN)
+                    print("formatting error: {0}\nNon float in zfactor column".format(fIN))
                     sys.exit()
             # replace T's with U's
             for i in range(len(self.seq)):
@@ -116,7 +116,7 @@ def main():
     # set the results directory
     resultsDir = "results_"+args.safeName
     
-    print resultsDir
+    print(resultsDir)
     try:
         os.mkdir(resultsDir)
     except:
@@ -130,29 +130,29 @@ def main():
     # set location of the logfile
     logFile = open("{0}/log_{0}.txt".format(resultsDir),"a")
     sys.stdout = logFile
-    print >> sys.stderr, "log file location: {0}/log_{0}.txt".format(resultsDir)
+    print("log file location: {0}/log_{0}.txt".format(resultsDir), file=sys.stderr)
     
-    print "\n"*3,"#"*51
-    print """#    _____                     ______    _     _  #
+    print("\n"*3,"#"*51)
+    print("""#    _____                     ______    _     _  #
 #  /  ___|                     |  ___|  | |   | | #
 #  \ `--. _   _ _ __   ___ _ __| |_ ___ | | __| | #
 #   `--. \ | | | '_ \ / _ \ '__|  _/ _ \| |/ _` | #
 #  /\__/ / |_| | |_) |  __/ |  | || (_) | | (_| | #
 #  \____/ \__,_| .__/ \___|_|  \_| \___/|_|\__,_| #
 #              | |                                #
-#              |_|                                #"""                             
-    print "#{0: ^49}#".format( "" )
-    print "#{0: ^49}#".format( "Superfold ver. Alpha_22-Sept-2014" )
-    print "#{0: ^49}#".format( "" )
-    print "#{0: ^49}#".format("starting job: " + args.safeName)
-    print "#{0: ^49}#".format( time.strftime("%c") )
-    print "#{0: ^49}#".format( "" )
+#              |_|                                #""")                             
+    print("#{0: ^49}#".format( "" ))
+    print("#{0: ^49}#".format( "Superfold ver. Alpha_22-Sept-2014" ))
+    print("#{0: ^49}#".format( "" ))
+    print("#{0: ^49}#".format("starting job: " + args.safeName))
+    print("#{0: ^49}#".format( time.strftime("%c") ))
+    print("#{0: ^49}#".format( "" ))
     
-    print "#"*51,"\n\n# Job Submitted with following attributes:"
-    print args, "\n"
+    print("#"*51,"\n\n# Job Submitted with following attributes:")
+    print(args, "\n")
     
     # first step is to run the partition function
-    print >> sys.stderr, "\nstarting Partition function calculation..."
+    print("\nstarting Partition function calculation...", file=sys.stderr)
     partitionPairing = dotPlot()
     
     if not debug:
@@ -187,7 +187,7 @@ def main():
     
     
     # generate the folded structure model
-    print >> sys.stderr, "starting Fold..."
+    print("starting Fold...", file=sys.stderr)
     
     initialStructure = CT()
     if not debug:
@@ -203,7 +203,7 @@ def main():
         initialStructure.readCT(initialStructureFileName)
     
     # write final files and figures
-    print >> sys.stderr, "drawing figures..."
+    print("drawing figures...", file=sys.stderr)
     
     # add in former pk constraints
     pkPair = []
@@ -240,12 +240,12 @@ def main():
         try:
             import pvclient
         except:
-            print "PVclient failed to load"
+            print("PVclient failed to load")
             args.drawPVclient = False
     
     for i,j in lowSHAPEregions:
         #define file names
-        print >> sys.stderr, i,j
+        print(i,j, file=sys.stderr)
         ct_name = "{2}/regions/region_{3}_{0:0>{maxChar}}_{1:0>{maxChar}}.ct".format(i,j,resultsDir,args.safeName,maxChar=maxChar)
         ps_name = "{2}/regions/region_{3}_{0:0>{maxChar}}_{1:0>{maxChar}}.ps".format(i,j,resultsDir,args.safeName,maxChar=maxChar)
         pvclient_name = "{2}/regions/region_{3}_{0:0>{maxChar}}_{1:0>{maxChar}}".format(i,j,resultsDir,args.safeName,maxChar=maxChar)
@@ -271,15 +271,15 @@ def main():
             try:
                 pvclient.python_client(x, tmpSHAPE, i, pvclient_name)
             except:
-                print "Structure drawing failed Region {0}-{1}".format(i,j)
+                print("Structure drawing failed Region {0}-{1}".format(i,j))
     ps_write.close()
     
     runtime = "{0:.2f}".format(time.time() - startTime)
-    print "\n","#"*51
-    print "#{0:^49}#".format("job finished: "+args.safeName)
-    print "#{0:^49}#".format( time.strftime("%c"))
-    print "#{0:^49}#".format("Total Runtime: " + runtime + " sec.")
-    print "#"*51
+    print("\n","#"*51)
+    print("#{0:^49}#".format("job finished: "+args.safeName))
+    print("#{0:^49}#".format( time.strftime("%c")))
+    print("#{0:^49}#".format("Total Runtime: " + runtime + " sec."))
+    print("#"*51)
 
 
 def ensembleRNA_splitPlot(dpObj, ctObj, pk=None, outFile="arcs.pdf"):
@@ -552,10 +552,10 @@ def runCheck():
             subprocess.call([each], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             count += 1
         except OSError:
-            print "Program {0} not found in the path".format(each)
+            print("Program {0} not found in the path".format(each))
     
     if len(neededCmds) != count:
-        print "...exiting"
+        print("...exiting")
         sys.exit()
     
     try:
@@ -563,8 +563,8 @@ def runCheck():
         datapath = os.environ.get("DATAPATH")
         os.listdir(datapath)
     except:
-        print "DATAPATH is not set. RNAstructure will not run"
-        print "...exiting"
+        print("DATAPATH is not set. RNAstructure will not run")
+        print("...exiting")
         sys.exit()
 
 
@@ -577,9 +577,9 @@ def parseArgs():
             x = line.rstrip().split()
             
             try:
-                x = map(int,x)
+                x = list(map(int,x))
             except:
-                print "Unexpected character in {0}...exiting".format(fIN)
+                print("Unexpected character in {0}...exiting".format(fIN))
                 return 0
             
             # initialize an array obj for the first line
@@ -718,7 +718,7 @@ def parseArgs():
         
         # check to make sure that the pks have partners
         if len(ds[0]) != len(ds[1]):
-            print "pkRegion file incorrectly formatted...exiting"
+            print("pkRegion file incorrectly formatted...exiting")
             sys.exit()
     except:
         # if file not given, fill empty bps
@@ -850,10 +850,10 @@ def mainAssemble(folderPath, trim=300):
     targetDP = {}
     
     # load all the dp files into memory
-    numFiles = len(filter( lambda x:x[-2:]=="dp",os.listdir(folderPath)  ) )
+    numFiles = len([x for x in os.listdir(folderPath) if x[-2:]=="dp"] )
     
     num = 1
-    print "reading files..."
+    print("reading files...")
     
     for dpFileName in os.listdir(folderPath):
         #ignore all files that are not dp files
@@ -872,8 +872,8 @@ def mainAssemble(folderPath, trim=300):
     
     # find the first and last dotplot files in sequence
     # we only want to trim one side of those
-    firstDP = min([i[0] for i in targetDP.keys()])
-    lastDP  = max([i[1] for i in targetDP.keys()])
+    firstDP = min([i[0] for i in list(targetDP.keys())])
+    lastDP  = max([i[1] for i in list(targetDP.keys())])
     
     
     #container for the final dp structure
@@ -884,13 +884,13 @@ def mainAssemble(folderPath, trim=300):
     coverage = []
     num = 1
     
-    print "trim and resorting..."
+    print("trim and resorting...")
     # average slipped pairs, renumber, and trim the ends
     # the dpKey is the starting number of window
-    if len(targetDP.keys()) == 1:
-        return targetDP[targetDP.keys()[0]]
+    if len(list(targetDP.keys())) == 1:
+        return targetDP[list(targetDP.keys())[0]]
     
-    for dpKey in targetDP.keys():
+    for dpKey in list(targetDP.keys()):
         
         #print "resorting window at {0}...".format(dpKey)
         progress(num,numFiles)
@@ -976,7 +976,7 @@ def concatonateDP(dpObj, coverage):
     oldFilter = np.zeros_like(dp['logBP'])
     dp['logBP'] = 10**( -dp['logBP'])
     
-    print "merging dotplots..."
+    print("merging dotplots...")
     for i,j in pairs:
         i = int(i)
         j = int(j)
@@ -1018,7 +1018,7 @@ def concatonateDP(dpObj, coverage):
             oldFilter = np.zeros_like(dp['logBP'])
             #print n, len(dp['logBP'])
     
-    print "DONE!"
+    print("DONE!")
     
     
     outObj.dp['logBP'] = -np.log10(outObj.dp['logBP'])
@@ -1119,13 +1119,13 @@ def MasterModel_findOverlapPairs(ctObjectList, baseCount):
     # then add them to the final 
     outpairs = {}
 
-    for key in bpairs.keys():
+    for key in list(bpairs.keys()):
         #print key
         # key[0] = i, key[1] = j
         if bpairs[key]/float(min(baseCount[key[0]-1],baseCount[key[1]-1])) > 0.5:
             outpairs[key] = bpairs[key]
 
-    return outpairs.keys()
+    return list(outpairs.keys())
 
 ############################
 # SHANNON SHAPE SEARCH FUNCTIONS
@@ -1182,7 +1182,7 @@ def mainShannonFunc(shapeReact, shannonEntropy, saveName, ctStruct):
 			#V1.1 Update: loop had started at 1, this skipped the first
 			#region and resulted in mis-assigned regions
 			for i in range(0,seqLength+1):
-				if pstat:print addnums,
+				if pstat:print(addnums, end=' ')
 				if addnums:
 					addList.append(i)
 				if not addnums:
@@ -1250,7 +1250,7 @@ def mainShannonFunc(shapeReact, shannonEntropy, saveName, ctStruct):
 	a = np.array(selectCutsites(shape_culled,shannon_culled,len(shape)))
 	b=a>0
 	
-	print "####### shannonShapeTransitions #######"
+	print("####### shannonShapeTransitions #######")
 	#print findTransitions(b,0.5)
 	regions = findTransitions(b,0.5)
 
@@ -1309,7 +1309,7 @@ def mainShannonFunc(shapeReact, shannonEntropy, saveName, ctStruct):
 	plt.xlim(0,5000)
 
 	#plot the highlighted range
-	lowShannonLowSHAPE = plt.fill_between(range(len(b)),b*3.0,0,alpha=0.2,color='blue', label = "Low Shannon low SHAPE")
+	lowShannonLowSHAPE = plt.fill_between(list(range(len(b))),b*3.0,0,alpha=0.2,color='blue', label = "Low Shannon low SHAPE")
 
 	#    for i in range(len(b)):
 	#        print i+1, float(b[i])
@@ -1380,12 +1380,12 @@ def mainShannonFunc(shapeReact, shannonEntropy, saveName, ctStruct):
 			regionPair.append([regions[-1][0], len(shape)])
 	
 	except:
-		print "No Defined Regions"
+		print("No Defined Regions")
 		regionPair.append([1,len(shape)])
 
-	print "Unexpanded regions:"
+	print("Unexpanded regions:")
 	for i,j in regionPair:
-		print i,"-",j
+		print(i,"-",j)
 	
 	allPair = ctStruct.pairList()
 
@@ -1409,9 +1409,9 @@ def mainShannonFunc(shapeReact, shannonEntropy, saveName, ctStruct):
 			
 		expandedRegion.append((new_i,new_j))
 
-	print "Expanded regions:"
+	print("Expanded regions:")
 	for i,j in expandedRegion:
-		print i,"-",j
+		print(i,"-",j)
 
 	return expandedRegion
     

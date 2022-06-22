@@ -328,7 +328,7 @@ def scaleSampleReactReport(dReport0,dReport1,isScale=True,window=25):
     s0,e0,s1,e1= findRoiReports(dReport0['seqNum'],dReport1['seqNum'])
     #print s0,e0,s1,e1  # above is region of intrest from both traces
     #   is this necessary if the data is avail and already curaited?
-    for key in dReport00.keys():
+    for key in list(dReport00.keys()):
         dReport00[key]=dReport00[key][s0:e0]
         dReport11[key]=dReport11[key][s1:e1] 
     if isScale:
@@ -355,8 +355,8 @@ def scaleSampleReactReport(dReport0,dReport1,isScale=True,window=25):
 if __name__ == '__main__':
     import sys
     if len(sys.argv) < 5:
-        print 'Usage: <nmia.txt.map> <1m6.txt.map> <difference.dif.mapd> <i>'
-        print 'window = 2*i+1 ... good place to start is 25'
+        print('Usage: <nmia.txt.map> <1m6.txt.map> <difference.dif.mapd> <i>')
+        print('window = 2*i+1 ... good place to start is 25')
         quit()
     import numpy as np 
     from pylab import figure,show,savefig,title
@@ -385,7 +385,7 @@ if __name__ == '__main__':
     #print dReport0
     # check file lengths, continue only if same
     if len(dReport0['seqNum'])!= len(dReport1['seqNum']):
-        print 'Input files not same length. Exit.'
+        print('Input files not same length. Exit.')
         sys.exit()
 ### SCALE AND NORMALIZE SAMPLE DATA (dReport1) to REFERENCE DATA(dReport0)    
 ###     ## the 'meat and potatoes' I guess of this script

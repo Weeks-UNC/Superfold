@@ -84,7 +84,7 @@ def plotArcRibbons(pairedNuc, ax, color, alpha=1.0):
             (outerPair[0], 0) # outer left duplicate point
             ]
 
-            for n in xrange(len(verts)):
+            for n in range(len(verts)):
                 verts[n] = [verts[n][0], verts[n][1]-1.2]#/vert-0.013]
             codes = [
             Path.MOVETO,
@@ -127,7 +127,7 @@ def writePlot(outPath="arcs.pdf",title="",seq=["A"],pairedNucA=[],pairedNucB=[],
     import matplotlib.patches as patches
     import matplotlib.gridspec as gridspec
 
-    num = range(1,len(seq)+1)
+    num = list(range(1,len(seq)+1))
     scaleFactor = 0.05
     # find longest base-pair and scale height of plot to fit this arc
     maxDistance = 0
@@ -232,7 +232,7 @@ def writePlot(outPath="arcs.pdf",title="",seq=["A"],pairedNucA=[],pairedNucB=[],
     bothPaired = [0]*len(pairedNucA)
     aOnlyPaired = [0]*len(pairedNucA)
     bOnlyPaired = [0]*len(pairedNucA)
-    for i in xrange(len(pairedNucA)):
+    for i in range(len(pairedNucA)):
         a = pairedNucA[i]
         b = pairedNucB[i]
         if a == b:
@@ -244,7 +244,7 @@ def writePlot(outPath="arcs.pdf",title="",seq=["A"],pairedNucA=[],pairedNucB=[],
             if b > i+1:
                 bOnlyPaired[i] = b
         
-    print bothPaired
+    print(bothPaired)
     plotArcRibbons(aOnlyPaired, ax2, aColor, alpha=alpha)
     plotArcRibbons(bOnlyPaired, ax2, bColor, alpha=alpha)
     plotArcRibbons(bothPaired, ax2, bothColor, alpha=alpha)
@@ -303,7 +303,7 @@ def writeManyPlot(outPath="arcs.pdf",title="",seq=["A"],pairedNucArr=[], arcColo
     import matplotlib.patches as patches
     import matplotlib.gridspec as gridspec
 
-    num = range(1,len(seq)+1)
+    num = list(range(1,len(seq)+1))
     scaleFactor = 0.05
     
     # find longest base-pair and scale height of plot to fit this arc
@@ -405,8 +405,8 @@ def writeManyPlot(outPath="arcs.pdf",title="",seq=["A"],pairedNucArr=[], arcColo
 
 if __name__=="__main__":
     if len(sys.argv) < 3:
-        print "\nUsage: python drawArcRibbons_simple.py <out_name.pdf> <accepted_structure.ct> [<different_structure.ct>] [<transparency 0.0-1.0>]"
-        print "\n    pdf, eps, and png are all acceptable, but png will be large\n"
+        print("\nUsage: python drawArcRibbons_simple.py <out_name.pdf> <accepted_structure.ct> [<different_structure.ct>] [<transparency 0.0-1.0>]")
+        print("\n    pdf, eps, and png are all acceptable, but png will be large\n")
         exit()
     outPath = sys.argv[1]
     ctFileA = open(sys.argv[2],"rU")

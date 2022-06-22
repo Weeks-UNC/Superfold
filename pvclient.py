@@ -89,11 +89,11 @@ if showHelp == True:
     while endBlock == False:
         line = thisFile.readline().replace("#","").rstrip()
         if inBlock == True:
-            print line
+            print(line)
             if line.find("-------------------------------") != -1:
                 endBlock = True
         elif line.find("--------------------------------") != -1:
-            print line
+            print(line)
             inBlock = True
     sys.exit(1)
 
@@ -176,7 +176,7 @@ xrnaNucTemplate = """%s %f %f"""
 xrnaColorTemplate = """<Nuc RefIDs='%i-%i' Color='%02x%02x%02x' FontID='2' FontSize='11' />"""
 
 def parseColor(arg):
-    if arg in colorDict.keys():
+    if arg in list(colorDict.keys()):
         return arg
     else:
         return None
@@ -350,10 +350,10 @@ def parseSHAPE(file):
         nucNum = int(splitLine[0])
         reactivity = float(splitLine[1])
         reactivityDict[nucNum] = reactivity
-    print "loaded SHAPE reactivities:"
+    print("loaded SHAPE reactivities:")
     if DEBUG==True:
         for n in reactivityDict:
-            print "%i: %0.2f"%(n,reactivityDict[n])
+            print("%i: %0.2f"%(n,reactivityDict[n]))
     return reactivityDict
 
 def parseDIFF(file, positiveThreshold, negativeThreshold):
@@ -489,7 +489,7 @@ def makeShapeColorStrings(seq, startNuc, reactivityDict):
     black = "0 0 0 setrgbcolor"
     colorStrings = []
     for i in range(startNuc, len(seq)+startNuc):
-        if i in reactivityDict.keys():
+        if i in list(reactivityDict.keys()):
             if reactivityDict[i] < -998.5:
                 colorStrings.append(gray)
             elif reactivityDict[i] <= 0.4:
@@ -511,7 +511,7 @@ def makeDiffColorStrings(seq, startNuc, differentialDicts, diffUpperColors, diff
             differentialDict = differentialDicts[j]
             diffUpperColor = diffUpperColors[j]
             diffLowerColor = diffLowerColors[j]
-            if i in differentialDict.keys():
+            if i in list(differentialDict.keys()):
                 if differentialDict[i] == "above":
                     colorString = colorDict[diffUpperColor]
                 elif differentialDict[i] == "within":
@@ -558,7 +558,7 @@ def modifyEPS(epsResponse, seq, startNuc, colorStrings, title, pairedNuc, startN
     # pretty up the drawing with title, colored reactivities, bigger fonts, etc.
     orderedNucIndices = makeOrderedNucIndices(pairedNuc)
     if DEBUG == True:
-        print "orderedNucIndices: "+str(orderedNucIndices)
+        print("orderedNucIndices: "+str(orderedNucIndices))
     #nucRegex = re.compile(r'\S+\s\S+\smoveto\s\([AUGCTNaugctn]\)\sshow')
     # nucleotide line-matching regex excludes numbers but allows other chars now
     nucRegex = re.compile(r'\S+\s\S+\smoveto\s\([^0-9]\)\sshow')
@@ -721,7 +721,7 @@ def makeColorStrings(seq, startNuc, args):
 
     # overwrite existing colors with range colors
     if rangeFound:
-        print "updating colors with range colors"
+        print("updating colors with range colors")
         colorStrings = addRangeColorStrings(seq, startNuc, args, colorStrings)
 
     return colorStrings
@@ -758,7 +758,7 @@ def python_client(CT, shape, startNumFrom=1, writeFolder=""):
         #colorStrings = makeColorStrings(seq, startNuc, args)
         colorStrings = makeShapeColorStrings(CT.seq, startNuc, shapeDict)
         if DEBUG==True:
-            print "colorStrings: "+str(colorStrings)
+            print("colorStrings: "+str(colorStrings))
         outLines, xrnaOutLines = modifyEPS(epsResponse, seq, startNuc, colorStrings, fullTitle, pairedNuc, startNumFrom)
         outputPath = os.path.normpath(writeFolder)
         #print "outputPath: "+outputPath
@@ -781,7 +781,7 @@ def main(args):
         #ctLines = ctRead.split("\n")
         ctLines = args.ct.readlines()
         dbnLines = ct_to_dbn(ctLines, args.structures)
-        print dbnLines
+        print(dbnLines)
         lineGroups = parseDotBracketFile(dbnLines)
         structureIndex = 1
         for lineGroup in lineGroups:
@@ -793,31 +793,31 @@ def main(args):
                     fullTitle = args.title
             else:
                 fullTitle = " "
-            print "Asking for structure %d . . ."%structureIndex
+            print("Asking for structure %d . . ."%structureIndex)
             #print "args.out: "+args.out
             epsResponse = getEPS(fullTitle, startNuc, seq, struct)
             if DEBUG==True:
                 debugEPS = open("raw_response.eps","w")
                 debugEPS.write(epsResponse)
                 debugEPS.close()
-            print "Coloring image %d . . ."%structureIndex
+            print("Coloring image %d . . ."%structureIndex)
             colorStrings = makeColorStrings(seq, startNuc, args)
-            print len(colorStrings)
+            print(len(colorStrings))
             if DEBUG==True:
-                print "colorStrings: "+str(colorStrings)
+                print("colorStrings: "+str(colorStrings))
             outLines, xrnaOutLines = modifyEPS(epsResponse, seq, startNuc, colorStrings, fullTitle, pairedNuc)
             outputPath = os.path.normpath(args.out + str(structureIndex))
-            print "outputPath: "+outputPath
+            print("outputPath: "+outputPath)
             outFile = open(outputPath+".eps", "w")
             outFile.write(outLines)
             outFile.close()
-            print "Wrote image %d."%structureIndex
+            print("Wrote image %d."%structureIndex)
             outFile = open(outputPath+".xrna", "w")
             outFile.write(xrnaOutLines)
             outFile.close()
-            print "Wrote xrna file %d."%structureIndex
+            print("Wrote xrna file %d."%structureIndex)
             structureIndex += 1
-        print "Done."
+        print("Done.")
     except Exception as e:
         sys.stderr.write(str(e.args))
         if "Pseudoviewer" in str(e.args[0]):

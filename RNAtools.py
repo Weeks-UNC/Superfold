@@ -61,7 +61,7 @@ class CT:
         try:
             linesToRead = int(open(fIN).readlines()[0].rstrip().split()[0])
         except:
-            print "file is not in .ct format. Requires Header"
+            print("file is not in .ct format. Requires Header")
             sys.exit()
         #print linesToRead
         for i in open(fIN).readlines()[1:linesToRead+1]:
@@ -81,7 +81,7 @@ class CT:
         
         #handle empty ct object case
         if not self.ct:
-            print "empty ct object. Nothing to write"
+            print("empty ct object. Nothing to write")
             return
         
         w = open(fOUT,'w')
@@ -129,7 +129,7 @@ class CT:
         """
         length = len(seq)
         
-        self.num = range(1,length+1)
+        self.num = list(range(1,length+1))
         self.seq=seq
         
         #give it a name if it has one
@@ -143,10 +143,10 @@ class CT:
         
         for i,j in pairs:
             if self.ct[i-1]!=0:
-                print 'Warning: conflicting pairs, (%s - %s) : (%s - %s)' % (str(i),str(j),str(self.ct[i-1]),str(i))
+                print('Warning: conflicting pairs, (%s - %s) : (%s - %s)' % (str(i),str(j),str(self.ct[i-1]),str(i)))
                 if skipConflicting: continue
             if self.ct[j-1]!=0:
-                print 'Warning: conflicting pairs, (%s - %s) : (%s - %s)' % (str(i),str(j),str(j),str(self.ct[j-1]))
+                print('Warning: conflicting pairs, (%s - %s) : (%s - %s)' % (str(i),str(j),str(j),str(self.ct[j-1])))
                 if skipConflicting: continue
             self.ct[i-1]=j
             self.ct[j-1]=i
@@ -160,7 +160,7 @@ class CT:
         
         out = CT()
         out.seq = self.seq[start-1:end]
-        out.num = range(1,end-start+2)
+        out.num = list(range(1,end-start+2))
         out.name = self.name + '_cut_'+str(start)+'_'+str(end)
         
         out.ct = []
@@ -198,7 +198,7 @@ class CT:
         
         #error out if nucleotide out of range
         if max(i,j) > len(self.ct):
-            print 'Error!, nucleotide {0} out of range!'.format(max(i,j)+1)
+            print('Error!, nucleotide {0} out of range!'.format(max(i,j)+1))
             return
         
         #i must always be less than j, correct for this
@@ -346,7 +346,7 @@ class CT:
         """
         rna = self.copy()
         # fill in 1,1 mismatch, 2,2 mismatch
-        for i in xrange(len(rna.ct)-3):
+        for i in range(len(rna.ct)-3):
             if rna.ct[i+1] == 0:
                 if rna.ct[i] - rna.ct[i+2] == 2:
                     rna.ct[i+1] = rna.ct[i] - 1
@@ -393,8 +393,8 @@ class CT:
         # append them to a list if they have it.
         overlaps = [] # stores the helix number
         
-        for i in xrange(heNum):
-            for j in xrange(i+1,heNum):
+        for i in range(heNum):
+            for j in range(i+1,heNum):
                 if checkOverlap(helices[i],helices[j]):
                     overlaps.append((i,j))
         
@@ -410,7 +410,7 @@ class CT:
         for i,j in overlaps:
             allHelix.append(i), allHelix.append(j)
         pk1Helix = max(set(allHelix), key=allHelix.count)
-        pk2Helix = filter(lambda x: x != pk1Helix, allHelix)
+        pk2Helix = [x for x in allHelix if x != pk1Helix]
         
         # construct list of base pairs
         pk1 = helices[pk1Helix]
@@ -433,7 +433,7 @@ class CT:
         """
         self.shape = readSHAPE(fIN)
         if len(self.shape)< len(self.ct):
-            print "warning! shape array is smaller than the CT range"
+            print("warning! shape array is smaller than the CT range")
         
     def writeSHAPE(self, fOUT):
         """
@@ -442,7 +442,7 @@ class CT:
         try:
             writeSHAPE(self.shape, fOUT)
         except:
-            print "No SHAPE data present"
+            print("No SHAPE data present")
             return
 
 
@@ -472,7 +472,7 @@ def padCT(targetCT, referenceCT,giveAlignment=False):
             maxScore += 1
     # handle the exception when target and reference do not match
     if maxScore != 1:
-        print 'reference and target do not match <EXIT>'
+        print('reference and target do not match <EXIT>')
         sys.exit()
     
     #create the renumbered ct to fit within the reference
@@ -717,14 +717,14 @@ class dotPlot:
             #print nt, np.sum(x), x[x>0.001]
             
             #print to stout if desired
-            if printOut:print nt,summed
+            if printOut:print(nt,summed)
             if printProgress:progress(nt,dp['length'])
             #write to file if desired
             if toFile:
                 line = '\t'.join(map(str,[nt,summed]))
                 w.write(line+'\n')
             shannon.append(summed)
-        if printProgress:print '' 
+        if printProgress:print('') 
         if toFile: w.close()
         return shannon
 
@@ -745,7 +745,7 @@ class dotPlot:
         
         # if a reference structure is given, merge pairs to it first
         if struct:
-            for pair in xrange(1,len(struct.ct)-1):
+            for pair in range(1,len(struct.ct)-1):
                 # define the base pairs
                 pair_i = pair+1
                 pair_j = struct.ct[pair]
@@ -780,7 +780,7 @@ class dotPlot:
                 prob_at = 10**(-dotPlot['logBP'][at])
                 
                 # cycle through all filter combinations
-                for filterPair in filterDP.keys():
+                for filterPair in list(filterDP.keys()):
                     
                     # shorthand variable for current filter
                     curr = filterDP[ filterPair ]
@@ -835,7 +835,7 @@ class dotPlot:
                     prob_at = 10**(-dotPlot['logBP'][filter_union])
                     
                     # go through each of the filters
-                    for pairFilter in filterList.keys():
+                    for pairFilter in list(filterList.keys()):
                         curr = filterList[ pairFilter ]
                         
                         # if the current pair exists in the dotplot

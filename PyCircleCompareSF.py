@@ -110,7 +110,7 @@ class CT:
         """
         length = len(seq)
         
-        self.num = range(1,length+1)
+        self.num = list(range(1,length+1))
         self.seq=seq
         
         #give it a name if it has one
@@ -124,10 +124,10 @@ class CT:
         
         for i,j in pairs:
             if self.ct[i-1]!=0:
-                print 'Warning: conflicting pairs, (%s - %s) : (%s - %s)' % (str(i),str(j),str(self.ct[i-1]),str(i))
+                print('Warning: conflicting pairs, (%s - %s) : (%s - %s)' % (str(i),str(j),str(self.ct[i-1]),str(i)))
                 if skipConflicting: continue
             if self.ct[j-1]!=0:
-                print 'Warning: conflicting pairs, (%s - %s) : (%s - %s)' % (str(i),str(j),str(j),str(self.ct[j-1]))
+                print('Warning: conflicting pairs, (%s - %s) : (%s - %s)' % (str(i),str(j),str(j),str(self.ct[j-1])))
                 if skipConflicting: continue
             self.ct[i-1]=j
             self.ct[j-1]=i
@@ -141,7 +141,7 @@ class CT:
         
         out = CT()
         out.seq = self.seq[start-1:end]
-        out.num = range(1,end-start+2)
+        out.num = list(range(1,end-start+2))
         out.name = self.name + '_cut_'+str(start)+'_'+str(end)
         
         out.ct = []
@@ -168,7 +168,7 @@ class CT:
         
         #error out if nucleotide out of range
         if max(i,j) > len(self.ct):
-            print 'Error!, nucleotide {0} out of range!'.format(max(i,j)+1)
+            print('Error!, nucleotide {0} out of range!'.format(max(i,j)+1))
             return
         
         #i must always be less than j, correct for this
@@ -311,7 +311,7 @@ class CT:
         """
         rna = self.copy()
         # fill in 1,1 mismatch, 2,2 mismatch
-        for i in xrange(len(rna.ct)-3):
+        for i in range(len(rna.ct)-3):
             if rna.ct[i+1] == 0:
                 if rna.ct[i] - rna.ct[i+2] == 2:
                     rna.ct[i+1] = rna.ct[i] - 1
@@ -358,8 +358,8 @@ class CT:
         # append them to a list if they have it.
         overlaps = [] # stores the helix number
         
-        for i in xrange(heNum):
-            for j in xrange(i+1,heNum):
+        for i in range(heNum):
+            for j in range(i+1,heNum):
                 if checkOverlap(helicies[i],helicies[j]):
                     overlaps.append((i,j))
         
@@ -375,7 +375,7 @@ class CT:
         for i,j in overlaps:
             allHelix.append(i), allHelix.append(j)
         pk1Helix = max(set(allHelix), key=allHelix.count)
-        pk2Helix = filter(lambda x: x != pk1Helix, allHelix)
+        pk2Helix = [x for x in allHelix if x != pk1Helix]
         
         # construct list of base pairs
         pk1 = helicies[pk1Helix]
@@ -549,7 +549,7 @@ def genCorrelString(correlDat):
     line = ""
     count = 0
     length = len(correlDat['i'])
-    for num in xrange(length):
+    for num in range(length):
         if correlDat['correl'][num] > 0.035:
             line += '[{0} {1} 0.00 0.50 0.00 {2}]\n'.format(correlDat['i'][num],correlDat['j'][num],0)
             count += 1
@@ -898,7 +898,7 @@ showpage
 
 if __name__ == '__main__':
     if len(sys.argv) <=3:
-        print 'Usage: CircleDMS.py structure.ct correlData.txt output.ps'
+        print('Usage: CircleDMS.py structure.ct correlData.txt output.ps')
         sys.exit()
     ct_pred = CT(sys.argv[1])
     
