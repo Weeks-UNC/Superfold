@@ -4,6 +4,18 @@ Gregg Rice 2014
 gmr@unc.edu
 
 ###################################################################################
+Docker build
+===================================================================================
+to build run:
+    docker build . -t superfold
+
+to run:
+    mkdir data
+    docker run -it -v ./data:/Superfold/data superfold /bin/bash
+
+The data directory will be "sheared" between your container and local system
+
+###################################################################################
 Requirements:
 
 ===================================================================================
